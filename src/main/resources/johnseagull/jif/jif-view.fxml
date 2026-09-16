@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.text.*?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="513.0" prefWidth="685.0" style="-fx-background-color: rgb(200,200,200);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="johnseagull.jif.AppController">
+   <children>
+
+      <Pane fx:id="viewport" layoutX="-12.0" layoutY="-5.0" prefHeight="519.0" prefWidth="701.0" style="-fx-background-color: grey;">
+         <children>
+            <Canvas fx:id="canvas" height="2000.0" managed="false" width="2000.0" />
+         </children></Pane>
+      <Pane layoutX="-12.0" layoutY="348.0" prefHeight="178.0" prefWidth="711.0" style="-fx-background-color: linear-gradient(to top, #000000, #00000000);;">
+         <children>
+      
+            <TextField fx:id="path" layoutX="17.0" layoutY="132.0" prefHeight="30.0" prefWidth="572.0" promptText="File path" style="-fx-background-color: rgb(0,0,0,0.5); -fx-text-fill: white;" />
+            <Pane layoutX="251.0" layoutY="28.0" prefHeight="102.0" prefWidth="338.0" style="-fx-background-color: rgba(0,0,0,0.5);">
+               <children>
+      
+                  <Label layoutX="5.0" layoutY="50.0" text="CEE" textFill="WHITE" textOverrun="CLIP" underline="true">
+                     <tooltip>
+                        <Tooltip text="Close Enough Encoding: Merges pixels that are within a certain threshold of each other" />
+                     </tooltip>
+                  </Label>
+                  <Label layoutX="5.0" layoutY="23.0" prefHeight="17.0" prefWidth="98.0" text="Subsampling" textFill="WHITE">
+                     <tooltip>
+                        <Tooltip text="Color Subsampling: Stores color data in blocks of a certain width and height to reduce file size" />
+                     </tooltip>
+      
+                  </Label>
+                  <TextField fx:id="maxrle" focusTraversable="false" layoutX="280.0" layoutY="47.0" prefHeight="25.0" prefWidth="40.0" promptText="int" style="-fx-background-color: rgb(0,0,0,0.5); -fx-text-fill: white;" text="255" />
+                  <Label layoutX="3.0" layoutY="3.0" text="Encoder settings" textFill="WHITE">
+                     <font>
+                        <Font name="System Bold" size="12.0" />
+                     </font>
+                  </Label>
+                  <TextField fx:id="cee" focusTraversable="false" layoutX="29.0" layoutY="48.0" prefHeight="25.0" prefWidth="40.0" promptText="int" style="-fx-background-color: rgb(0,0,0,0.5); -fx-text-fill: white;" text="0" />
+                  <TextField fx:id="quality" focusTraversable="false" layoutX="79.0" layoutY="20.0" prefHeight="25.0" prefWidth="40.0" promptText="int" style="-fx-background-color: rgb(0,0,0,0.5); -fx-text-fill: white;" text="2" />
+                  <Label layoutX="84.0" layoutY="52.0" text="Fancy CEE" textFill="WHITE">
+                     <tooltip>
+                        <Tooltip text="Smart Run Length Encoding: Instead of just using the first color of a particular run, use the average, will take longer to encode" />
+                     </tooltip>
+                  </Label>
+                  <Label layoutX="189.0" layoutY="51.0" text="Max run length" textFill="WHITE">
+                     <tooltip>
+                     <Tooltip text="Maximum run length: Specifies the maximum run length for the encoder, will reduce line artifacting at the cost of file size" />
+                  </tooltip>
+                  </Label>
+                  <Label layoutX="134.0" layoutY="23.0" text="Fancy Subsample" textFill="WHITE">
+                     <tooltip>
+                        <Tooltip text="Smart Run Length Encoding: Instead of just using the first color of a particular run, use the average, will take longer to encode" />
+                     </tooltip>
+                  </Label>
+                  <CheckBox fx:id="fancyCEE" layoutX="151.0" layoutY="50.0" mnemonicParsing="false" />
+                  <CheckBox fx:id="hue" layoutX="238.0" layoutY="24.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="51.0" text="Hue" textFill="WHITE" />
+                  <CheckBox fx:id="sat" layoutX="289.0" layoutY="24.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="51.0" text="Sat" textFill="WHITE" />
+                  <CheckBox fx:id="ceeColor" layoutX="112.0" layoutY="79.0" mnemonicParsing="false" />
+                  <Label layoutX="5.0" layoutY="79.0" text="CEE for color data" textFill="WHITE" />
+
+               </children>
+            </Pane>
+            <Button fx:id="export" layoutX="591.0" layoutY="99.0" mnemonicParsing="false" onMouseClicked="#onExport" prefHeight="30.0" prefWidth="104.0" style="-fx-background-color: rgba(0,0,0,0.5);" text="Export BMP">
+               <textFill>
+                  <LinearGradient startX="1.0">
+                     <stops>
+                        <Stop>
+                           <color>
+                              <Color green="0.8421052694320679" blue="0.07017543911933899" />
+                           </color>
+                        </Stop>
+                        <Stop offset="0.007662835249042145">
+                           <color>
+                              <Color red="0.7368420958518982" green="0.7368420958518982" blue="0.7368420958518982" />
+                           </color>
+                        </Stop>
+                        <Stop offset="1.0">
+                           <color>
+                              <Color red="1.0" green="1.0" blue="1.0" />
+                           </color>
+                        </Stop>
+                     </stops>
+                  </LinearGradient>
+               </textFill>
+            </Button>
+      
+            <ProgressBar fx:id="p1" layoutX="19.0" layoutY="1.0" prefHeight="18.0" prefWidth="676.0" progress="0.0" visible="false" />
+      
+            <Button layoutX="591.0" layoutY="131.0" mnemonicParsing="false" onMouseClicked="#onLoadClick" prefHeight="30.0" prefWidth="104.0" style="-fx-background-color: rgba(0,0,0,0.5);" text="Load">
+               <textFill>
+                  <LinearGradient endX="1.0" endY="1.0" startX="1.0">
+                     <stops>
+                        <Stop>
+                           <color>
+                              <Color green="0.8421052694320679" blue="0.07017543911933899" />
+                           </color>
+                        </Stop>
+                        <Stop offset="0.007662835249042145">
+                           <color>
+                              <Color red="0.7368420958518982" green="0.7368420958518982" blue="0.7368420958518982" />
+                           </color>
+                        </Stop>
+                        <Stop offset="1.0">
+                           <color>
+                              <Color red="1.0" green="1.0" blue="1.0" />
+                           </color>
+                        </Stop>
+                     </stops>
+                  </LinearGradient>
+               </textFill>
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Button>
+            <TextArea fx:id="label" editable="false" layoutX="17.0" layoutY="29.0" onKeyPressed="#e" prefHeight="102.0" prefWidth="233.0" promptText="Waiting for image data..." style="-fx-background-color: rgba(0, 0, 0, 0.4); -fx-control-inner-background: transparent; -fx-background: transparent;" text="Waiting for image..." />
+            <Button fx:id="encode" layoutX="591.0" layoutY="28.0" mnemonicParsing="false" onMouseClicked="#onEncodeClick" prefHeight="69.0" prefWidth="104.0" style="-fx-background-color: rgba(0,0,0,0.5);" text="Encode">
+               <font>
+                  <Font name="System Bold" size="15.0" />
+               </font>
+               <textFill>
+                  <LinearGradient endX="1.0" endY="1.0" startX="1.0">
+                     <stops>
+                        <Stop>
+                           <color>
+                              <Color green="0.8421052694320679" blue="0.07017543911933899" />
+                           </color>
+                        </Stop>
+                        <Stop offset="0.007662835249042145">
+                           <color>
+                              <Color red="0.7368420958518982" green="0.7368420958518982" blue="0.7368420958518982" />
+                           </color>
+                        </Stop>
+                        <Stop offset="1.0">
+                           <color>
+                              <Color red="1.0" green="1.0" blue="1.0" />
+                           </color>
+                        </Stop>
+                     </stops>
+                  </LinearGradient>
+               </textFill>
+            </Button>
+         </children></Pane>
+   </children>
+</Pane>

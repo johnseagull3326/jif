@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="309.0" prefWidth="339.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="johnseagull.jif.ErrorController">
+   <children>
+      <Label layoutX="7.0" layoutY="6.0" prefHeight="62.0" prefWidth="326.0" text="Well, this is an error. Either my spaghetti code crashed or you messed something up. It must be you because my spaghetti code never fails..." textOverrun="CLIP" wrapText="true" />
+      <Button layoutX="176.0" layoutY="271.0" mnemonicParsing="false" onMouseClicked="#fin" prefHeight="25.0" prefWidth="149.0" text="Close" />
+      <TextArea fx:id="stack" layoutX="7.0" layoutY="85.0" prefHeight="140.0" prefWidth="326.0" text="This is where the stacktrace is supposed to be, if you are viewing this, then you REALLY messed up. idk what you should do at this point...&#10;&#10;&#10;&#10;:(" wrapText="true" />
+      <Separator layoutX="7.0" layoutY="222.0" prefHeight="18.0" prefWidth="326.0" />
+      <Separator layoutX="7.0" layoutY="68.0" prefHeight="12.0" prefWidth="326.0" />
+      <Label fx:id="info" layoutX="7.0" layoutY="236.0" prefHeight="35.0" prefWidth="326.0" wrapText="true" />
+      <Button layoutX="7.0" layoutY="271.0" mnemonicParsing="false" onMouseClicked="#retry" prefHeight="25.0" prefWidth="163.0" text="Retry" />
+   </children>
+</Pane>
