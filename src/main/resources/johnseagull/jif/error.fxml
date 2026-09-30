@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="309.0" prefWidth="339.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="johnseagull.jif.ErrorController">
    <children>
@@ -10,7 +11,10 @@
       <TextArea fx:id="stack" layoutX="7.0" layoutY="85.0" prefHeight="140.0" prefWidth="326.0" text="This is where the stacktrace is supposed to be, if you are viewing this, then you REALLY messed up. idk what you should do at this point...&#10;&#10;&#10;&#10;:(" wrapText="true" />
       <Separator layoutX="7.0" layoutY="222.0" prefHeight="18.0" prefWidth="326.0" />
       <Separator layoutX="7.0" layoutY="68.0" prefHeight="12.0" prefWidth="326.0" />
-      <Label fx:id="info" layoutX="7.0" layoutY="236.0" prefHeight="35.0" prefWidth="326.0" wrapText="true" />
+      <Label fx:id="info" alignment="TOP_LEFT" layoutX="7.0" layoutY="236.0" prefHeight="35.0" prefWidth="326.0" text="eeee" wrapText="true">
+         <font>
+            <Font size="10.0" />
+         </font></Label>
       <Button layoutX="7.0" layoutY="271.0" mnemonicParsing="false" onMouseClicked="#retry" prefHeight="25.0" prefWidth="163.0" text="Retry" />
    </children>
 </Pane>

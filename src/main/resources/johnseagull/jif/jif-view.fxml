@@ -16,7 +16,7 @@
       <Pane layoutX="-12.0" layoutY="348.0" prefHeight="178.0" prefWidth="711.0" style="-fx-background-color: linear-gradient(to top, #000000, #00000000);;">
          <children>
       
-            <TextField fx:id="path" layoutX="17.0" layoutY="132.0" prefHeight="30.0" prefWidth="572.0" promptText="File path" style="-fx-background-color: rgb(0,0,0,0.5); -fx-text-fill: white;" />
+            <TextField fx:id="path" layoutX="17.0" layoutY="132.0" prefHeight="30.0" prefWidth="571.0" promptText="File path" style="-fx-background-color: rgb(0,0,0,0.5); -fx-text-fill: white;" />
             <Pane layoutX="251.0" layoutY="28.0" prefHeight="102.0" prefWidth="338.0" style="-fx-background-color: rgba(0,0,0,0.5);">
                <children>
       
@@ -54,11 +54,11 @@
                         <Tooltip text="Smart Run Length Encoding: Instead of just using the first color of a particular run, use the average, will take longer to encode" />
                      </tooltip>
                   </Label>
-                  <CheckBox fx:id="fancyCEE" layoutX="151.0" layoutY="50.0" mnemonicParsing="false" />
+                  <CheckBox fx:id="fancyCEE" layoutX="151.0" layoutY="50.0" mnemonicParsing="false" selected="true" />
                   <CheckBox fx:id="hue" layoutX="238.0" layoutY="24.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="51.0" text="Hue" textFill="WHITE" />
-                  <CheckBox fx:id="sat" layoutX="289.0" layoutY="24.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="51.0" text="Sat" textFill="WHITE" />
-                  <CheckBox fx:id="ceeColor" layoutX="112.0" layoutY="79.0" mnemonicParsing="false" />
-                  <Label layoutX="5.0" layoutY="79.0" text="CEE for color data" textFill="WHITE" />
+                  <CheckBox fx:id="sat" layoutX="289.0" layoutY="24.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="51.0" selected="true" text="Sat" textFill="WHITE" />
+                  <CheckBox fx:id="ceeColor" layoutX="112.0" layoutY="79.0" mnemonicParsing="false" selected="true" visible="false" />
+                  <Label layoutX="5.0" layoutY="79.0" text="CEE for color data" textFill="WHITE" visible="false" />
 
                </children>
             </Pane>

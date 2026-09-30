@@ -27,10 +27,13 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Path;
+import java.security.spec.ECField;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AppController {
 
@@ -57,6 +60,8 @@ public class AppController {
     public CheckBox fancyCEE;
     public CheckBox hue;
     public CheckBox sat;
+
+    private final AtomicBoolean redrawPending = new AtomicBoolean(false);
     public CheckBox ceeColor;
 
     private double lastMouseX;
@@ -65,6 +70,7 @@ public class AppController {
     private double scal_min = 0.1;
     private double scal_max = 10.0;
     private double zom = 1.1;
+
     @FXML
     public void initialize() {
         setupZom();
@@ -104,7 +110,7 @@ public class AppController {
     private void setupZom() {
         canvas.addEventFilter(ScrollEvent.SCROLL, event -> {
             if (event.getDeltaY() == 0) return;
-            
+
             double scaleFactor = (event.getDeltaY() > 0) ? zom : (1 / zom);
             double currentScale = canvas.getScaleX();
             double newScale = Math.clamp(currentScale * scaleFactor, scal_min, scal_max);
@@ -114,6 +120,7 @@ public class AppController {
             event.consume();
         });
     }
+
     Task<Void> compress = new Task<Void>() {
         @Override
         protected Void call() throws Exception {
@@ -146,7 +153,7 @@ public class AppController {
         canvas.getGraphicsContext2D().clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
-        if (path.getText().replace("\"","").endsWith(".jif")) {
+        if (path.getText().replace("\"", "").endsWith(".jif")) {
             onDecodeClick(path.getText().replace("\"", ""));
             return;
         }
@@ -180,110 +187,38 @@ public class AppController {
         }
         int w = (int) image.getWidth();
         int h = (int) image.getHeight();
-        int c =0;
+        int c = 0;
         try {
 
-             c = Integer.parseInt(cee.getText());
+            c = Integer.parseInt(cee.getText());
         } catch (NumberFormatException e) {
             e.printStackTrace();
         }
         PixelReader pr = image.getPixelReader();
 
-
+        canvas.getGraphicsContext2D().clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         int finalC = c;
-        Task<Boolean> encode = new Task<>() {
+        Task<Boolean> encode = new Task<Boolean>() {
             @Override
             protected Boolean call() throws Exception {
+                WritableImage temp = new WritableImage(w, h);
                 updateValue(true);
                 updateMessage("Preparing...\nCreating working cache");
                 valueBuffer.clear();
                 hueBuffer.clear();
                 satBuffer.clear();
                 int p = 0;
-                int pmax = ((h*w + (((h/q)*(w/q))*q))*q) +h*w;
-                updateMessage("Caching value data...");
-                for (int y = 0; y < h; y++) {
-                    List<Byte> lineBuffer = new ArrayList<>();
-                    for (int x = 0; x < w; x++) {
-
-                        int v = (int) (pr.getColor(x, y).getBrightness() * 254.0);
-                        lineBuffer.add((byte) v);
-                        p++;
-                        if (p% 128 == 0) {
-                            updateProgress(p, pmax);
-                        }
-                    }
-                    valueBuffer.add(lineBuffer);
-                }
-                updateMessage("Caching hue data...");
-                for (int y = 0; y < h; y+=q) {
-                    List<Byte> lineBuffer = new ArrayList<>();
-                    for (int x = 0; x < w; x+=q) {
-                        int v = 0;
-                        if (hue.isSelected()) {
-                            double sum = 0;
-                            for (int iy = 0; iy < q; iy++) {
-                                for (int ix = 0; ix < q; ix++) {
-                                    double ve = (pr.getColor(x + ix, y + iy).getHue());
-                                    sum += ve;
-                                }
-                            }
-                            v = (int) (sum / (q * q) * (255.0 / 360.0));
-                        } else {
-                            v = (int) (pr.getColor(x,y).getHue()* (255.0 / 360.0));
-                        }
-                        for (int z = 0; z < q; z++) {
-                            lineBuffer.add((byte) v);
-                        }
-                        p++;
-                        if (p% 128 == 0) {
-                            updateProgress(p, pmax);
-                        }
-                    }
-                    for (int z = 0; z < q; z++) {
-                        hueBuffer.add(lineBuffer);
-                    }
-                }
-                updateMessage("Caching saturation data...");
-                for (int y = 0; y < h; y+=q) {
-                    List<Byte> lineBuffer = new ArrayList<>();
-                    for (int x = 0; x < w; x+=q) {
-                        int v = 0;
-                        if (hue.isSelected()) {
-                            double sum = 0;
-                            for (int iy = 0; iy < q; iy++) {
-                                for (int ix = 0; ix < q; ix++) {
-                                    double ve = (pr.getColor(x + ix, y + iy).getSaturation());
-                                    sum += ve;
-                                }
-                            }
-                            v = (int) (sum / (q * q) * (254));
-                        } else {
-                            v = (int) (pr.getColor(x,y).getHue()* (254));
-                        }
-                        for (int z = 0; z < q; z++) {
-                            lineBuffer.add((byte) v);
-                        }
-                        p++;
-                        if (p% 128 == 0) {
-                            updateProgress(p, pmax);
-                        }
-                    }
-                    for (int z = 0; z < q; z++) {
-                        satBuffer.add(lineBuffer);
-                    }
-                }
-                updateMessage("Writing buffer to file...");
+                int pmax = ((h * w + (((h / q) * (w / q)) * q))) + h * w;
+                updateMessage("Copying pixel data...");
 
                 File source = new File(path.getText().replace("\"", ""));
                 File out = new File(source.getParentFile(), source.getName().replaceFirst("\\.[^.]+$", "") + ".jif");
-
                 try (FileOutputStream fos = new FileOutputStream(out)) {
                     int hrs = 16;
                     int vs = (int) (h * w);
                     int hs = (int) ((h / q) * (w / q));
                     int ss = (int) ((h / q) * (w / q));
-                    byte[] buffer = new byte[hrs + vs + hs + ss + 1];
+                    byte[] buffer = new byte[hrs + vs + hs + ss];
 
                     buffer[0] = 0x4a;
                     buffer[1] = 0x55;
@@ -298,57 +233,131 @@ public class AppController {
                     buffer[7] = (byte) (ih);
                     buffer[8] = (byte) q;
                     buffer[9] = (byte) finalC;
-                    buffer[10] = (byte)Integer.parseInt(maxrle.getText());
+                    buffer[10] = (byte) Integer.parseInt(maxrle.getText());
                     if (fancyCEE.isSelected()) {
                         buffer[11] = (byte) 0x01;
                     }
                     int pos = 16;
-                    updateMessage("Writing value data...");
-                    for (int y = 0; y < ih; y++) {
-                        for (int x = 0; x < iw; x++) {
-                            buffer[pos++] = valueBuffer.get(y).get(x);
+                    for (int y = 0; y < h; y++) {
+                        int finalY = y;
+                        for (int x = 0; x < w; x++) {
+                            buffer[pos++] = (byte) (pr.getColor(x, y).getBrightness() * 254.0);
                             p++;
-                            if (p% 1024 == 0) {
+                            if (p % 128 == 0) {
                                 updateProgress(p, pmax);
                             }
                         }
+                        Platform.runLater(() -> {
+                            for (int tx = 0; tx < w; tx++) {
+                                temp.getPixelWriter().setColor(tx, finalY, Color.grayRgb(buffer[(finalY * w) + tx] & 0xFF));
+                            }
+                        });
+                        requestDraw(temp);
                     }
-                    updateMessage("Writing hue data...");
-                    for (int y = 0; y < ih / q; y++) {
-                        for (int x = 0; x < iw / q; x++) {
-                            buffer[pos++] = hueBuffer.get(y*q).get(x*q);
+                    for (int j = 0; j < h / q; j++) {
+                        int y = j * q;
+                        for (int i = 0; i < w / q; i++) {
+                            int x = i * q;
+                            try {
+                                if (hue.isSelected()) {
+                                    double cy = 0;
+                                    double cx = 0;
+                                    for (int iy = y; iy < y + q; iy++) {
+                                        for (int ix = x; ix < x + q; ix++) {
+                                            Color col = pr.getColor(ix, iy);
+                                            double r = Math.toRadians(col.getHue());
+                                            double w = col.getSaturation();
+                                            cy += w * Math.sin(r);
+                                            cx += w * Math.cos(r);
+                                        }
+                                    }
+                                    double v = Math.toDegrees(Math.atan2(cy, cx));
+                                    if (v < 0) v += 360;
+                                    buffer[pos++] = (byte) (v * (255.0 / 360.0));
+                                } else {
+                                    buffer[pos++] = (byte) (pr.getColor(x, y).getHue() * (255.0 / 360.0));
+                                }
+                            } catch (Exception ex) {
+                                buffer[pos++] = buffer[pos - 1];
+                            }
                             p++;
-                            if (p% 1024 == 0) {
+                            if (p % 128 == 0) {
                                 updateProgress(p, pmax);
                             }
                         }
+                        int finalPos = pos;
+                        int row = finalPos - (w / q - 1);
+                        Platform.runLater(() -> {
+                            for (int tx = 0; tx < w; tx++) {
+                                int sample = row + (tx / q);
+                                int val = 16 + y * w + tx;
+                                temp.getPixelWriter().setColor(tx, y, Color.hsb((buffer[sample] & 0xFF) * (360.0 / 255.0), 1, (double) (buffer[val] & 0xFF) / 255));
+                            }
+                        });
+                        requestDraw(temp);
                     }
-                    updateMessage("Writing saturation data...");
-                    for (int y = 0; y < ih / q; y++) {
-                        for (int x = 0; x < iw / q; x++) {
-                            buffer[pos++] = satBuffer.get(y*q).get(x*q);
+                    for (int j = 0; j < h / q; j++) {
+                        int y = j * q;
+                        int X = 0;
+                        for (int i = 0; i < w / q; i++) {
+                            int x = i * q;
+                            try {
+                                if (sat.isSelected()) {
+                                    int sum = (int) (pr.getColor(x, y).getSaturation() * 254.0);
+                                    sum += (int) (pr.getColor(x + q - 1, y).getSaturation() * 254.0);
+                                    sum += (int) (pr.getColor(x + q - 1, y + q - 1).getSaturation() * 254.0);
+                                    sum += (int) (pr.getColor(x, y + q - 1).getSaturation() * 254.0);
+                                    buffer[pos++] = (byte) (sum / 4);
+                                } else {
+                                    buffer[pos++] = (byte) (pr.getColor(x, y).getSaturation() * 254.0);
+                                }
+                            } catch (Exception ex) {
+                                buffer[pos++] = buffer[pos - 1];
+                            }
                             p++;
-                            if (p% 1024 == 0) {
+                            if (p % 128 == 0) {
                                 updateProgress(p, pmax);
                             }
                         }
+                        int finalPos = pos;
+                        int row = finalPos - (w / q);
+                        Platform.runLater(() -> {
+                            Color recovery = Color.GREEN;
+                            for (int ty = y; ty < y + q; ty++) {
+                                for (int tx = 0; tx < w; tx++) {
+                                    int sample = row + (tx / q);
+                                    int val = 16 + y * w + tx;
+
+                                    try {
+                                        recovery = Color.hsb((buffer[sample - ss] & 0xFF) * (360.0 / 255.0), (double) (buffer[sample] & 0xFF) / 255, (double) (buffer[val] & 0xFF) / 255);
+
+                                    } catch (Exception ignore) {
+                                    }
+                                    temp.getPixelWriter().setColor(tx, ty, recovery);
+                                }
+                            }
+                        });
+                        requestDraw(temp);
                     }
                     updateMessage("Compressing...");
                     boolean doCEE = (finalC != 0);
-                    updateProgress(-1,0);
+                    updateProgress(-1, 0);
                     int e;
                     try {
                         e = Integer.parseInt(maxrle.getText());
-                    } catch (NumberFormatException ex) {
+                    } catch (Exception ex) {
                         e = 0;
                     }
 
                     updateMessage("Compressing...\nPreparing...");
                     ByteArrayOutputStream output = new ByteArrayOutputStream();
-                    int vSize = (int) ((image.getHeight() * image.getWidth()) + 16);
+
+                    int vStart = 16;
+                    int hStart = vStart + w * h;
+                    int sStart = hStart + (w / q) * (h / q);
                     for (int i = 0; i < buffer.length; i++) {
                         updateProgress(i, buffer.length);
-                        updateMessage("Compressing...\n"+ i + "/"+buffer.length+" Bytes");
+                        updateMessage("Compressing...\n" + i + "/" + buffer.length + " Bytes");
 
                         int run = 1;
                         if (i > 15) {
@@ -360,6 +369,7 @@ public class AppController {
                                 while (i + run < buffer.length && Math.abs(buffer[i + run] - buffer[i]) <= finalC && run < e) {
                                     run++;
                                 }
+
                             }
                         }
                         if (run >= 3) {
@@ -369,12 +379,25 @@ public class AppController {
                                 for (int j = i; j < i + run; j++) {
                                     pixels.add(buffer[j]);
                                 }
-                                long sum = 0;
-                                for (Byte b : pixels) {
-                                    sum += Byte.toUnsignedInt(b);
+                                if (i > hStart && i < sStart) {
+                                    double cx = 0.0;
+                                    double cy = 0.0;
+                                    for (Byte b : pixels) {
+                                        cy += Math.sin(Math.toRadians((b & 0xff) * (360.0 / 255.0)));
+                                        cx += Math.cos(Math.toRadians((b & 0xff) * (360.0 / 255.0)));
+                                    }
+                                    double v = Math.toDegrees(Math.atan2(cy, cx));
+                                    if (v < 0) v += 360;
+                                    old = (byte) (v * (255.0 / 360.0));
+                                } else {
+                                    long sum = 0;
+                                    for (Byte b : pixels) {
+                                        sum += Byte.toUnsignedInt(b);
+                                    }
+                                    double avg = (double) sum / pixels.size();
+
+                                    old = (byte) avg;
                                 }
-                                double avg = (double) sum / pixels.size();
-                                old = (byte) avg;
                             } else {
                                 old = buffer[i];
                             }
@@ -389,26 +412,32 @@ public class AppController {
                             output.write(buffer[i]);
                         }
                     }
-                  
-                    
+                    byte[] footer = new byte[36];
+                    footer[0] = 0x4a;
+                    footer[1] = 0x45;
+                    footer[2] = 0x4e;
+                    footer[3] = 0x44;
+
+
+                    output.write(footer);
+                    updateMessage("Writing to file...");
                     fos.write(output.toByteArray());
                     updateMessage("Done");
 
 
                 } catch (Exception ex) {
                     System.err.println("smth done messed up");
-                    System.err.println(ex.getMessage());
+                    System.err.println(Arrays.toString(ex.getStackTrace()));
+                    throwError(ex);
                     throw ex;
                 }
+
+                onDecodeClick(out.getPath());
                 p = pmax;
                 updateProgress(p, pmax);
                 updateValue(false);
-                
-                
-                
-                
-                
-                
+
+
                 return null;
 
             }
@@ -420,6 +449,24 @@ public class AppController {
         p1.visibleProperty().unbind();
         p1.visibleProperty().bind(encode.valueProperty());
         new Thread(encode).start();
+    }
+
+    private void requestDraw(WritableImage temp) {
+        if (redrawPending.compareAndSet(false, true)) {
+            Platform.runLater(() -> {
+                int cw = 0;
+                int ch = 0;
+                if (temp.getWidth() > canvas.getWidth() || temp.getHeight() > canvas.getHeight()
+                        || temp.getWidth() < canvas.getWidth() || temp.getHeight() < canvas.getHeight()) {
+                    cw = (int) canvas.getWidth();
+                    float wr = (float) (cw / temp.getWidth());
+                    ch = (int) (temp.getHeight() * wr);
+                }
+                canvas.getGraphicsContext2D().drawImage(temp, 0, 0, cw, ch);
+
+                redrawPending.set(false);
+            });
+        }
     }
 
     public void onDumpClick(MouseEvent mouseEvent) {
@@ -459,7 +506,9 @@ public class AppController {
                 "A cat ate the code",
                 "You encountered the Exception",
                 " ",
-                "the program did not program"
+                "the program did not program",
+                "That's generally not very good...",
+                "spaghetti mmm....."
         );
         valueBuffer.clear();
         hueBuffer.clear();
@@ -474,7 +523,7 @@ public class AppController {
                 stage.setScene(scene);
                 stage.show();
                 stage.setResizable(false);
-                controller.stack.setText(e.getMessage() + "\n" +Arrays.toString(e.getStackTrace()));
+                controller.stack.setText(e.getMessage() + "\n" + Arrays.toString(e.getStackTrace()));
                 if (e instanceof IOException) {
                     controller.info.setText("I/O Error: Usually an error with missing or conflicting files");
                 }
@@ -492,6 +541,7 @@ public class AppController {
             }
         });
     }
+
     public void onDecodeClick(String p) {
 
         valueBuffer.clear();
@@ -581,7 +631,7 @@ public class AppController {
                         int cw = 0;
                         int ch = 0;
                         updateMessage("Rendering");
-                        updateProgress(-1,0);
+                        updateProgress(-1, 0);
                         for (int y = 0; y < h; y++) {
                             for (int x = 0; x < w; x++) {
                                 int val = 0;
@@ -600,7 +650,7 @@ public class AppController {
                                 if (pos % 128 == 0) {
                                     updateProgress(pos, posmax);
                                 }
-                                newImage.getPixelWriter().setColor(x, y, Color.hsb((double) hue * (360.0 / 255.0), Math.clamp((double) sat / 254,0,1.0), (double) val / 254));
+                                newImage.getPixelWriter().setColor(x, y, Color.hsb((double) hue * (360.0 / 255.0), Math.clamp((double) sat / 254, 0, 1.0), (double) val / 254));
                             }
                         }
                         if (newImage.getWidth() > canvas.getWidth() || newImage.getHeight() > canvas.getHeight() || newImage.getWidth() < canvas.getWidth() || newImage.getHeight() < canvas.getHeight()) {
@@ -611,7 +661,7 @@ public class AppController {
                         image = newImage;
                         canvas.getGraphicsContext2D().clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
                         canvas.getGraphicsContext2D().drawImage(newImage, 0, 0, cw, ch);
-                        updateMessage("Done \nSize: "+ w + "x" + h  +" Fancy CEE: "+ buffer[11]+ "\nSubsampling: "+q+" CEE: " + c + "\nMax RLE length: " + (buffer[10]& 0xFF));
+                        updateMessage("Done \nSize: " + w + "x" + h + " Fancy CEE: " + buffer[11] + "\nSubsampling: " + q + " CEE: " + c + "\nMax RLE length: " + (buffer[10] & 0xFF));
                     } else {
                         updateMessage("Invalid Format");
                         throwError(new Exception("Invalid Format"));
@@ -638,6 +688,7 @@ public class AppController {
         hueBuffer.clear();
         satBuffer.clear();
     }
+
     public void onExport(MouseEvent mouseEvent) {
         try {
             int w = (int) image.getWidth();
@@ -653,7 +704,7 @@ public class AppController {
                     bImage.setRGB(x, y, rgb);
                 }
             }
-            File source = new File(path.getText().replace("\"",""));
+            File source = new File(path.getText().replace("\"", ""));
             File out = new File(source.getParentFile(), source.getName().replaceFirst("\\.[^.]+$", "") + "_decoded.bmp");
             ImageIO.write(bImage, "bmp", out);
             System.out.println("Exported BMP to output.bmp");
@@ -661,6 +712,7 @@ public class AppController {
             e.printStackTrace();
         }
     }
+
     public void onFlush(MouseEvent mouseEvent) {
 
         canvas.getGraphicsContext2D().clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
