@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -23,12 +22,8 @@ import javafx.stage.Stage;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Path;
-import java.security.spec.ECField;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,19 +32,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AppController {
 
-    public List<List<Color>> mainBuffer = new ArrayList<>();
     public List<List<Byte>> valueBuffer = new ArrayList<List<Byte>>();
     public List<List<Byte>> satBuffer = new ArrayList<>();
     public List<List<Byte>> hueBuffer = new ArrayList<List<Byte>>();
-    public Path outputpath;
     public Canvas canvas;
     public TextField path;
-    public Button copy;
     public Button encode;
-    public Button dump;
     public Image image;
-    public ProgressBar p3;
-    public ProgressBar p2;
     public ProgressBar p1;
     public TextArea label;
     public TextField quality;
@@ -76,7 +65,6 @@ public class AppController {
         setupZom();
         setupPanning();
     }
-
 
     private void setupPanning() {
         Rectangle clipRect = new Rectangle();
@@ -121,13 +109,6 @@ public class AppController {
         });
     }
 
-    Task<Void> compress = new Task<Void>() {
-        @Override
-        protected Void call() throws Exception {
-            return null;
-        }
-    };
-
     private byte[] decomp(byte[] input) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -146,7 +127,6 @@ public class AppController {
         }
         return output.toByteArray();
     }
-
 
     @FXML
     protected void onLoadClick() {
@@ -168,12 +148,11 @@ public class AppController {
             h = (int) (image.getHeight() * wr);
         }
 
-        gc.drawImage(image, 0, 0, image.getWidth(), image.getHeight());
+        gc.drawImage(image, 0, 0, w, h);
         if (image.getWidth() == 0 || image.getHeight() == 0) {
             throwError(new Exception("Invalid Format"));
         }
     }
-
 
     public void onEncodeClick(MouseEvent mouseEvent) {
 
@@ -189,7 +168,6 @@ public class AppController {
         int h = (int) image.getHeight();
         int c = 0;
         try {
-
             c = Integer.parseInt(cee.getText());
         } catch (NumberFormatException e) {
             e.printStackTrace();
@@ -198,7 +176,7 @@ public class AppController {
 
         canvas.getGraphicsContext2D().clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         int finalC = c;
-        Task<Boolean> encode = new Task<Boolean>() {
+        Task<Boolean> encode = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
                 WritableImage temp = new WritableImage(w, h);
@@ -215,9 +193,9 @@ public class AppController {
                 File out = new File(source.getParentFile(), source.getName().replaceFirst("\\.[^.]+$", "") + ".jif");
                 try (FileOutputStream fos = new FileOutputStream(out)) {
                     int hrs = 16;
-                    int vs = (int) (h * w);
-                    int hs = (int) ((h / q) * (w / q));
-                    int ss = (int) ((h / q) * (w / q));
+                    int vs = h * w;
+                    int hs = (h / q) * (w / q);
+                    int ss = (h / q) * (w / q);
                     byte[] buffer = new byte[hrs + vs + hs + ss];
 
                     buffer[0] = 0x4a;
@@ -298,7 +276,6 @@ public class AppController {
                     }
                     for (int j = 0; j < h / q; j++) {
                         int y = j * q;
-                        int X = 0;
                         for (int i = 0; i < w / q; i++) {
                             int x = i * q;
                             try {
@@ -373,7 +350,7 @@ public class AppController {
                             }
                         }
                         if (run >= 3) {
-                            byte old = 0;
+                            byte old;
                             if (fancyCEE.isSelected()) {
                                 List<Byte> pixels = new ArrayList<>();
                                 for (int j = i; j < i + run; j++) {
@@ -417,29 +394,21 @@ public class AppController {
                     footer[1] = 0x45;
                     footer[2] = 0x4e;
                     footer[3] = 0x44;
-
-
                     output.write(footer);
                     updateMessage("Writing to file...");
                     fos.write(output.toByteArray());
                     updateMessage("Done");
-
-
                 } catch (Exception ex) {
                     System.err.println("smth done messed up");
                     System.err.println(Arrays.toString(ex.getStackTrace()));
                     throwError(ex);
                     throw ex;
                 }
-
                 onDecodeClick(out.getPath());
                 p = pmax;
                 updateProgress(p, pmax);
                 updateValue(false);
-
-
                 return null;
-
             }
         };
         label.textProperty().unbind();
@@ -466,15 +435,6 @@ public class AppController {
 
                 redrawPending.set(false);
             });
-        }
-    }
-
-    public void onDumpClick(MouseEvent mouseEvent) {
-        for (List<Byte> line : valueBuffer) {
-            System.out.println(line.toString());
-        }
-        for (List<Byte> line : hueBuffer) {
-            System.out.println(line.toString());
         }
     }
 
@@ -553,7 +513,6 @@ public class AppController {
             protected Boolean call() throws IOException {
 
                 try {
-
                     updateValue(true);
                     updateMessage("Prepare for decode");
                     FileInputStream fis = new FileInputStream(p);
@@ -561,7 +520,6 @@ public class AppController {
                     byte[] rawbuffer = fis.readAllBytes();
                     byte[] buffer = decomp(rawbuffer);
                     int posmax = buffer.length;
-
                     if (
                             buffer[0] == 0x4a
                                     && buffer[1] == 0x55
@@ -588,9 +546,7 @@ public class AppController {
                                     updateProgress(pos, posmax);
                                 }
                             }
-
                             valueBuffer.add(lineBuffer);
-
                         }
                         updateMessage("Decoding hue data...");
                         for (int j = 0; j < h / q; j++) {
@@ -641,10 +597,7 @@ public class AppController {
                                     val = valueBuffer.get(y).get(x) & 0xFF;
                                     hue = hueBuffer.get(y).get(x) & 0xFF;
                                     sat = satBuffer.get(y).get(x) & 0xFF;
-                                } catch (IndexOutOfBoundsException e) {
-
-                                }
-
+                                } catch (IndexOutOfBoundsException ignored) {}
 
                                 pos++;
                                 if (pos % 128 == 0) {
@@ -711,13 +664,5 @@ public class AppController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void onFlush(MouseEvent mouseEvent) {
-
-        canvas.getGraphicsContext2D().clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        valueBuffer.clear();
-        hueBuffer.clear();
-        satBuffer.clear();
     }
 }
