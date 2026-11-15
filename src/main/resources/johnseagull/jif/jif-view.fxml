@@ -59,6 +59,8 @@
                   <CheckBox fx:id="sat" layoutX="289.0" layoutY="24.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="51.0" selected="true" text="Sat" textFill="WHITE" />
                   <CheckBox fx:id="ceeColor" layoutX="112.0" layoutY="79.0" mnemonicParsing="false" selected="true" visible="false" />
                   <Label layoutX="5.0" layoutY="79.0" text="CEE for color data" textFill="WHITE" visible="false" />
+                  <Label layoutX="5.0" layoutY="77.0" text="Comment" textFill="WHITE" />
+
 
                </children>
             </Pane>

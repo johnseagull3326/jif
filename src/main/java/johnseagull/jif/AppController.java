@@ -280,11 +280,14 @@ public class AppController {
                             int x = i * q;
                             try {
                                 if (sat.isSelected()) {
-                                    int sum = (int) (pr.getColor(x, y).getSaturation() * 254.0);
-                                    sum += (int) (pr.getColor(x + q - 1, y).getSaturation() * 254.0);
-                                    sum += (int) (pr.getColor(x + q - 1, y + q - 1).getSaturation() * 254.0);
-                                    sum += (int) (pr.getColor(x, y + q - 1).getSaturation() * 254.0);
-                                    buffer[pos++] = (byte) (sum / 4);
+                                    int sum = 0;
+                                    for (int iy = y; iy < y + q; iy++) {
+                                        for (int ix = x; ix < x + q; ix++) {
+                                            Color col = pr.getColor(ix, iy);
+                                            sum+=(int) (col.getSaturation() * 254.0);
+                                        }
+                                    }
+                                    buffer[pos++] = (byte) (sum / (q*q));
                                 } else {
                                     buffer[pos++] = (byte) (pr.getColor(x, y).getSaturation() * 254.0);
                                 }
@@ -622,7 +625,6 @@ public class AppController {
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.err.println(e.getMessage());
-
                     throwError(e);
                 }
                 updateValue(false);
@@ -651,6 +653,7 @@ public class AppController {
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
                     Color c = pr.getColor(x, y);
+
                     int rgb = ((int) Math.round(c.getRed() * 255) << 16)
                             | ((int) Math.round(c.getGreen() * 255) << 8)
                             | ((int) Math.round(c.getBlue() * 255));
